@@ -1,0 +1,138 @@
+name: Build-Immortalwrt
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    - cron: 0 0/6 * * *
+jobs:
+  x86:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          repository: immortalwrt/immortalwrt
+          fetch-depth: 0
+      - name: Cache
+        uses: 1orz/cacheopenwrt@main
+        with:
+          ccache: true
+      - name: Download and Load custom configuration
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/1orz/My-action/main/immortalwrt/prenv.sh)
+          curl -fsSL https://raw.githubusercontent.com/1orz/My-action/main/immortalwrt/config-x86_64 >.config
+          echo -e 'CONFIG_DEVEL=y\nCONFIG_CCACHE=y' >> .config;
+      - name: Try to Build When Multi-core compile failure will be rollback to Single core compile
+        run: |
+          make download -j$(nproc)
+          echo -e "Will be use $(nproc) thread compile"
+          sudo df -h
+          make -j$(nproc) || make -j1 V=sc
+          sudo df -h
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        if: success()
+        with:
+          name: x86_64
+          path: bin/targets/*/*
+      - name: Upload firmware to Download Station
+        if: success()
+        run: |
+          cd bin/targets/*/*
+          zip -r -o -q -9 x86_64.zip . -i *.gz
+          curl -F "token=${{ secrets.UPLOAD_TOKEN }}" -F "location=Router/immortalwrt/x86_64" -F "file=@x86_64.zip" ${{ secrets.MAIN_UPLOAD_PROCESSOR }}
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 2
+          keep_minimum_runs: 2
+  R2100:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          repository: immortalwrt/immortalwrt
+          fetch-depth: 0
+      - name: Cache
+        uses: 1orz/cacheopenwrt@main
+        with:
+          ccache: true
+      - name: Download and Load custom configuration
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/1orz/My-action/main/immortalwrt/prenv.sh)
+          curl -fsSL https://raw.githubusercontent.com/1orz/My-action/main/immortalwrt/config-r2100 >.config
+          echo -e 'CONFIG_DEVEL=y\nCONFIG_CCACHE=y' >> .config;
+      - name: Try to Build When Multi-core compile failure will be rollback to Single core compile
+        run: |
+          make download -j$(nproc)
+          echo -e "Will be use $(nproc) thread compile"
+          sudo df -h
+          make -j$(nproc) || make -j1 V=sc
+          sudo df -h
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        if: success()
+        with:
+          name: R2100
+          path: bin/targets/*/*
+      - name: Upload firmware to Download Station
+        if: success()
+        run: |
+          cd bin/targets/*/*
+          zip -r -o -q -9 R2100.zip . -i *.gz
+          curl -F "token=${{ secrets.UPLOAD_TOKEN }}" -F "location=Router/immortalwrt/XiaoMi/AC2100" -F "file=@R2100.zip" ${{ secrets.MAIN_UPLOAD_PROCESSOR }}
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 2
+          keep_minimum_runs: 2
+  RM2100:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          repository: immortalwrt/immortalwrt
+          fetch-depth: 0
+      - name: Cache
+        uses: 1orz/cacheopenwrt@main
+        with:
+          ccache: true
+      - name: Download and Load custom configuration
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/1orz/My-action/main/immortalwrt/prenv.sh)
+          curl -fsSL https://raw.githubusercontent.com/1orz/My-action/main/immortalwrt/config-rm2100 >.config
+          echo -e 'CONFIG_DEVEL=y\nCONFIG_CCACHE=y' >> .config;
+      - name: Try to Build When Multi-core compile failure will be rollback to Single core compile
+        run: |
+          make download -j$(nproc)
+          echo -e "Will be use $(nproc) thread compile"
+          sudo df -h
+          make -j$(nproc) || make -j1 V=sc
+          sudo df -h
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        if: success()
+        with:
+          name: R2100
+          path: bin/targets/*/*
+      - name: Upload firmware to Download Station
+        if: success()
+        run: |
+          cd bin/targets/*/*
+          zip -r -o -q -9 RM2100.zip . -i *.gz
+          curl -F "token=${{ secrets.UPLOAD_TOKEN }}" -F "location=Router/immortalwrt/XiaoMi/RedMi-AC2100" -F "file=@RM2100.zip" ${{ secrets.MAIN_UPLOAD_PROCESSOR }}
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 2
+          keep_minimum_runs: 2
